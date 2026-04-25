@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SecurePass Pro</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="container">
+    <h1>🔐 SecurePass Pro</h1>
+
+    <input type="text" id="password" placeholder="Start typing password..." oninput="analyze()">
+
+    <div class="bar-bg">
+        <div id="bar"></div>
+    </div>
+
+    <p id="strength"></p>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Entropy</h3>
+            <p id="entropy">0</p>
+        </div>
+
+        <div class="card">
+            <h3>Crack Time</h3>
+            <p id="crack">0</p>
+        </div>
+    </div>
+
+    <div class="suggestions">
+        <h3>Improve your password:</h3>
+        <ul id="tips"></ul>
+    </div>
+</div>
+
+<script>
+async function analyze(){
+    const password = document.getElementById("password").value;
+
+    if(password === ""){
+        reset();
+        return;
+    }
+
+    const res = await fetch("/analyze", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({password})
+    });
+
+    const data = await res.json();
+
+    document.getElementById("strength").innerText = data.strength;
+
+    let bar = document.getElementById("bar");
+    bar.style.width = (data.score * 20) + "%";
+
+    if(data.strength.includes("Weak")) bar.style.background = "#ef4444";
+    else if(data.strength.includes("Medium")) bar.style.background = "#f59e0b";
+    else bar.style.background = "#22c55e";
+
+    document.getElementById("entropy").innerText = data.entropy + " bits";
+    document.getElementById("crack").innerText = data.crack_time;
+
+    let tips = document.getElementById("tips");
+    tips.innerHTML = "";
+
+    data.suggestions.forEach(t => {
+        let li = document.createElement("li");
+        li.innerText = t;
+        tips.appendChild(li);
+    });
+}
+
+function reset(){
+    document.getElementById("bar").style.width = "0%";
+    document.getElementById("strength").innerText = "";
+    document.getElementById("entropy").innerText = "0";
+    document.getElementById("crack").innerText = "0";
+    document.getElementById("tips").innerHTML = "";
+}
+</script>
+
+</body>
+</html>
